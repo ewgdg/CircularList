@@ -1,5 +1,5 @@
 # CircularList
-A double-ended queue implements IList interface, featuring O(1) `RemoveAt(0)` and `Insert(0, value)` compared to `List<>`.
+A double-ended queue implements `IList<>` interface, featuring O(1) `RemoveAt(0)` and `Insert(0, value)` compared to `List<>`.
 This means each of removing/inserting head and tail is an O(1) operation.
 
 ## Usage
