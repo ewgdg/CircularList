@@ -1,6 +1,6 @@
 # CircularList
-A double-ended queue implements IList interface, featuring O(1) `RemoveAt(0)` compared to `List<>`.
-This means both removing head and tail are O(1) operations.
+A double-ended queue implements IList interface, featuring O(1) `RemoveAt(0)` and `Insert(0, value)` compared to `List<>`.
+This means each of removing/inserting head and tail is an O(1) operation.
 
 ## Usage
 There is a single file project, just copy the CircularList.cs to the target project.

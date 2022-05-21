@@ -140,16 +140,12 @@ namespace CicularList.Test
     [TestMethod]
     public void RandomInsertTest()
     {
-      var count = 231;
+      var count = 12345;
       SetupRandomTest(out var refList, out var list, count);
 
       Random random = new Random(3214);
       for (int i = 0; i < count; ++i)
       {
-        if (i == 33)
-        {
-
-        }
         var index = random.Next(refList.Count);
         var value = random.Next();
 
@@ -200,7 +196,7 @@ namespace CicularList.Test
     [TestMethod]
     public void RandomInsertRemoveTest()
     {
-      var count = 10248;
+      var count = 20248;
       SetupRandomTest(out var refList, out var list, count);
       Random random = new Random(123456);
       for (int i = 0; i < count; ++i)
@@ -276,11 +272,18 @@ namespace CicularList.Test
     private void PrintResult(IList<int> refList, IList<int> list)
     {
       Console.WriteLine($"Expected Count:{refList.Count}, Actual Count:{list.Count} ");
+      var count = 0;
       for (int i = 0; i < Math.Min(list.Count, refList.Count); i++)
       {
         if (list[i] != refList[i])
         {
           Console.WriteLine($"At index {i}, Expected Value:{refList[i]}, Actual Value:{list[i]}");
+          count++;
+          if (count >= 10)
+          {
+            Console.WriteLine("....");
+            break;
+          }
         }
       }
     }

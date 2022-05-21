@@ -13,7 +13,7 @@ namespace NonSystem.Collections.Generic
   public class CircularList<T> : IList<T>
   {
     protected T[] _items;
-    private int _initialCapacity;
+    private readonly int _initialCapacity;
     protected int _headIndex;
     protected int _tailIndex;
     private int LargestIndex
@@ -68,19 +68,24 @@ namespace NonSystem.Collections.Generic
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void EnsureValidIndex(int index)
     {
-      if (index < 0 || index >= Count)
+      if (index < 0 || index >= _count)
       {
         throw new ArgumentOutOfRangeException("index");
       }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void CorrectInternalIndex(ref int internalIndex)
+    protected int CorrectInternalIndex(int internalIndex)
     {
-      if (internalIndex >= _items.Length)
+      if (internalIndex >= _items.Length || internalIndex < 0)
       {
         internalIndex %= _items.Length;
       }
+      if (internalIndex < 0)
+      {
+        internalIndex += _items.Length;
+      }
+      return internalIndex;
     }
 
     /// <summary>
@@ -92,23 +97,20 @@ namespace NonSystem.Collections.Generic
     protected int GetInternalIndex(int index)
     {
       var internalIndex = index + _headIndex;
-      CorrectInternalIndex(ref internalIndex);
-      return internalIndex;
+      return CorrectInternalIndex(internalIndex);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected int IncreaseInternalIndex(int internalIndex)
     {
       internalIndex += 1;
-      CorrectInternalIndex(ref internalIndex);
-      return internalIndex;
+      return CorrectInternalIndex(internalIndex);
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected int DecreaseInternalIndex(int internalIndex)
     {
       internalIndex -= 1;
-      CorrectInternalIndex(ref internalIndex);
-      return internalIndex;
+      return CorrectInternalIndex(internalIndex);
     }
 
 
@@ -123,11 +125,7 @@ namespace NonSystem.Collections.Generic
       {
         ExpandCapacity();
       }
-      _tailIndex += 1;
-      if (_tailIndex >= _items.Length)
-      {
-        _tailIndex %= _items.Length;
-      }
+      _tailIndex = IncreaseInternalIndex(_tailIndex);
 
       _items[_tailIndex] = item;
       ++_count;
@@ -170,7 +168,7 @@ namespace NonSystem.Collections.Generic
 
     public void CopyTo(T[] array, int arrayIndex)
     {
-      if (Count == 0)
+      if (_count == 0)
       {
         return;
       }
@@ -183,16 +181,18 @@ namespace NonSystem.Collections.Generic
       }
 
       _headIndex = arrayIndex;
-      _tailIndex = arrayIndex + Count - 1;
+      _tailIndex = arrayIndex + _count - 1;
     }
 
     public IEnumerator<T> GetEnumerator()
     {
-      for (int i = 0, internalIndex = GetInternalIndex(i); i < Count; i++, internalIndex = IncreaseInternalIndex(internalIndex))
+      for (int i = 0, internalIndex = GetInternalIndex(i); i < _count; i++, internalIndex = IncreaseInternalIndex(internalIndex))
       {
         yield return _items[internalIndex];
       }
     }
+
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
     public int IndexOf(T item)
     {
@@ -217,45 +217,15 @@ namespace NonSystem.Collections.Generic
         ExpandCapacity();
       }
 
-      var internalIndex = GetInternalIndex(index);
-
-      //need to always shift to the right to maintain the order
-      if (IsWrapped(internalIndex))
+      if (index == 0 || index < (_count - 1) / 2)
       {
-        var count = _tailIndex - internalIndex + 1;
-        if (count > 0)
-        {
-          Array.Copy(_items, internalIndex, _items, internalIndex + 1, _tailIndex - internalIndex + 1);
-        }
+        InsertShiftHead(index, item);
       }
       else
       {
-        if (IsWrapped(_tailIndex))
-        {
-          Array.Copy(_items, 0, _items, 1, _tailIndex + 1);
-        }
-
-        var largestIndex = LargestIndex;
-        var count = largestIndex - internalIndex;
-        if (largestIndex == _items.Length - 1)
-        {
-          _items[0] = _items[_items.Length - 1];
-        }
-        else
-        {
-          count += 1;
-        }
-        if (count > 0)
-        {
-          Array.Copy(_items, internalIndex, _items, internalIndex + 1, count);
-        }
+        InsertShiftTail(index, item);
       }
-
-      _items[internalIndex] = item;
-      _tailIndex = IncreaseInternalIndex(_tailIndex);
-      ++_count;
     }
-
 
     public bool Remove(T item)
     {
@@ -268,24 +238,107 @@ namespace NonSystem.Collections.Generic
       return true;
     }
 
-    private void RemoveAtShiftTail(int index)
+    public virtual void RemoveAt(int index)
     {
+      EnsureValidIndex(index);
 
-      var internalIndex = GetInternalIndex(index);
-
-      if (IsWrapped(internalIndex))
+      //we can shift from either end
+      if (index == 0 || index < (_count - 1) / 2)
       {
-        //Array.Copy can handle overlap
-        Array.Copy(_items, internalIndex + 1, _items, internalIndex, _tailIndex - internalIndex);
+        RemoveAtShiftHead(index);
       }
       else
       {
-        int count = LargestIndex - internalIndex;
-        Array.Copy(_items, internalIndex + 1, _items, internalIndex, count);
+        RemoveAtShiftTail(index);
+      }
+    }
+
+    private void InsertShiftTail(int index, T item)
+    {
+      var internalIndex = GetInternalIndex(index);
+      if (IsWrapped(internalIndex))
+      {
+        var copyCount = _tailIndex - internalIndex + 1;
+        if (copyCount > 0)
+        {
+          Array.Copy(_items, internalIndex, _items, internalIndex + 1, copyCount);
+        }
+      }
+      else
+      {
         if (IsWrapped(_tailIndex))
         {
-          _items[_items.Length - 1] = _items[0];
-          if (_tailIndex > 0)
+          Array.Copy(_items, 0, _items, 1, _tailIndex + 1);
+        }
+
+        var largestIndex = LargestIndex;
+        _items[IncreaseInternalIndex(largestIndex)] = _items[largestIndex];
+        var copyCount = largestIndex - internalIndex;
+        if (copyCount > 0)
+        {
+          Array.Copy(_items, internalIndex, _items, internalIndex + 1, copyCount);
+        }
+      }
+
+      _tailIndex = IncreaseInternalIndex(_tailIndex);
+      _items[internalIndex] = item;
+      ++_count;
+    }
+
+    private void InsertShiftHead(int index, T item)
+    {
+      var internalIndex = GetInternalIndex(index);
+      var insertAtInternalIndex = DecreaseInternalIndex(internalIndex);
+      var newHead = DecreaseInternalIndex(_headIndex);
+
+      //if insert at index 0 then there is no need to shift
+      if (index > 0)
+      {
+        var isInsertAtIndexWrapped = IsWrapped(insertAtInternalIndex);
+        _items[newHead] = _items[_headIndex];
+        var copyCount = (isInsertAtIndexWrapped ? _items.Length - 1 : insertAtInternalIndex) - _headIndex;
+        if (copyCount > 0)
+        {
+          Array.Copy(_items, _headIndex + 1, _items, _headIndex, copyCount);
+        }
+
+        if (isInsertAtIndexWrapped)
+        {
+          _items[^1] = _items[0];
+          var copyCount2 = insertAtInternalIndex;
+          if (copyCount2 > 0)
+          {
+            Array.Copy(_items, 1, _items, 0, copyCount2);
+          }
+        }
+      }
+
+      _headIndex = newHead;
+      _items[insertAtInternalIndex] = item;
+      ++_count;
+    }
+
+    private void RemoveAtShiftTail(int index)
+    {
+      var internalIndex = GetInternalIndex(index);
+      if (IsWrapped(internalIndex))
+      {
+        //Array.Copy can handle overlap
+        var copyCount = _tailIndex - internalIndex;
+        if (copyCount > 0)
+        {
+          Array.Copy(_items, internalIndex + 1, _items, internalIndex, copyCount);
+        }
+      }
+      else
+      {
+        var copyCount = LargestIndex - internalIndex;
+        Array.Copy(_items, internalIndex + 1, _items, internalIndex, copyCount);
+        if (IsWrapped(_tailIndex))
+        {
+          _items[^1] = _items[0];
+          var copyCount2 = _tailIndex;
+          if (copyCount2 > 0)
           {
             Array.Copy(_items, 1, _items, 0, _tailIndex);
           }
@@ -298,69 +351,32 @@ namespace NonSystem.Collections.Generic
 
     private void RemoveAtShiftHead(int index)
     {
-
       var internalIndex = GetInternalIndex(index);
-
-      //if (index == 0 && internalIndex != _headIndex)
-      //{
-      //  Console.WriteLine($"internalIndex = {internalIndex}, _headIndex = {_headIndex}");
-      //}
-
       if (!IsWrapped(internalIndex))
       {
-        var count = internalIndex - _headIndex;
-        if (count > 0)
+        var copyCount = internalIndex - _headIndex;
+        if (copyCount > 0)
         {
-          Array.Copy(_items, _headIndex, _items, _headIndex + 1, count);
+          Array.Copy(_items, _headIndex, _items, _headIndex + 1, copyCount);
         }
       }
       else
       {
-        Array.Copy(_items, 0, _items, 1, internalIndex);
-        _items[0] = _items[_items.Length - 1];
-        var count = _items.Length - 1 - _headIndex;
-        if (count > 0)
+        var copyCount = internalIndex;
+        if (copyCount > 0)
         {
-          Array.Copy(_items, _headIndex, _items, _headIndex + 1, count);
+          Array.Copy(_items, 0, _items, 1, copyCount);
         }
-        //if (index == 0)
-        //{
-        //  Console.WriteLine("wrong branch");
-        //}
+        _items[0] = _items[^1];
+        var copyCount2 = _items.Length - 1 - _headIndex;
+        if (copyCount2 > 0)
+        {
+          Array.Copy(_items, _headIndex, _items, _headIndex + 1, copyCount2);
+        }
       }
 
       _count--;
       _headIndex = IncreaseInternalIndex(_headIndex);
     }
-
-    public virtual void RemoveAt(int index)
-    {
-      EnsureValidIndex(index);
-      //RemoveAtShiftHead(index);
-      //RemoveAtShiftTail(index);
-
-      //if (index == 0)
-      //{
-      //  _count--;
-      //  IncreaseInternalIndex(ref _headIndex);
-      //  return;
-      //}
-
-      //we can shift from either end
-      if (index == 0 || index < (Count - 1) / 2)
-      {
-        RemoveAtShiftHead(index);
-      }
-      else
-      {
-        //if (index == 0 && Count > 2)
-        //{
-        //  Console.WriteLine("wrong branch");
-        //}
-        RemoveAtShiftTail(index);
-      }
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
   }
 }

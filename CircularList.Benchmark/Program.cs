@@ -9,6 +9,7 @@ namespace CircularList.Benchmark
       BenchmarkRunner.Run<RemoveBenchmarks>();
       BenchmarkRunner.Run<RemoveHeadBenchmarks>();
       BenchmarkRunner.Run<InsertBenchmarks>();
+      BenchmarkRunner.Run<InsertHeadBenchmarks>();
       BenchmarkRunner.Run<RandomBenchmarks>();
     }
   }
