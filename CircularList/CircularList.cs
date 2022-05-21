@@ -8,7 +8,7 @@ namespace NonSystem.Collections.Generic
   /// </summary>
   /// <typeparam name="T">Type</typeparam>
   /// <remarks>
-  /// O(1) InsertAt,RemoveAt for index 0 and n-1
+  /// O(1) Insert/RemoveAt for index 0 and n-1
   /// </remarks>
   public class CircularList<T> : IList<T>
   {
