@@ -7,25 +7,30 @@ There is a single file project, just copy the CircularList.cs to the target proj
 
 ## Benchmark
 ### Insert
-|           Method |     Mean |    Error |  StdDev | Gen 0 | Gen 1 | Gen 2 | Allocated |
-|----------------- |---------:|---------:|--------:|------:|------:|------:|----------:|
-|         WithList | 168.2 ms | 11.25 ms | 2.92 ms |     - |     - |     - | 512.91 KB |
-| WithCircularList | 175.6 ms | 25.83 ms | 6.71 ms |     - |     - |     - | 512.89 KB |
+|           Method |      Mean |    Error |   StdDev | Gen 0 | Gen 1 | Gen 2 | Allocated |
+|----------------- |----------:|---------:|---------:|------:|------:|------:|----------:|
+|         WithList | 169.51 ms | 3.759 ms | 0.582 ms |     - |     - |     - | 512.89 KB |
+| WithCircularList |  75.86 ms | 4.366 ms | 0.676 ms |     - |     - |     - | 512.79 KB |
+### Insert Head
+|           Method |         Mean |       Error |      StdDev | Gen 0 | Gen 1 | Gen 2 | Allocated |
+|----------------- |-------------:|------------:|------------:|------:|------:|------:|----------:|
+|         WithList | 367,056.2 μs | 18,414.2 μs | 4,782.11 μs |     - |     - |     - | 512.62 KB |
+| WithCircularList |     412.6 μs |    248.6 μs |    64.55 μs |     - |     - |     - | 512.49 KB |
 ### Remove
 |           Method |     Mean |    Error |   StdDev | Gen 0 | Gen 1 | Gen 2 | Allocated |
 |----------------- |---------:|---------:|---------:|------:|------:|------:|----------:|
-|         WithList | 41.85 ms | 4.202 ms | 1.091 ms |     - |     - |     - |     784 B |
-| WithCircularList | 40.84 ms | 2.433 ms | 0.377 ms |     - |     - |     - |     784 B |
+|         WithList | 41.91 ms | 2.851 ms | 0.740 ms |     - |     - |     - |     784 B |
+| WithCircularList | 24.70 ms | 4.885 ms | 1.269 ms |     - |     - |     - |     784 B |
 ### Remove Head
 |           Method |        Mean |       Error |      StdDev | Gen 0 | Gen 1 | Gen 2 | Allocated |
 |----------------- |------------:|------------:|------------:|------:|------:|------:|----------:|
 |         WithList | 78,514.6 μs | 34,478.1 μs | 8,953.85 μs |     - |     - |     - |     480 B |
 | WithCircularList |    232.5 μs |    249.5 μs |    64.80 μs |     - |     - |     - |     480 B |
 ### Random Operations
-|           Method |     Mean |    Error |   StdDev | Gen 0 | Gen 1 | Gen 2 | Allocated |
-|----------------- |---------:|---------:|---------:|------:|------:|------:|----------:|
-|         WithList | 61.12 ms | 3.826 ms | 0.592 ms |     - |     - |     - |     784 B |
-| WithCircularList | 51.09 ms | 4.990 ms | 1.296 ms |     - |     - |     - |     784 B |
+|           Method |     Mean |     Error |   StdDev | Gen 0 | Gen 1 | Gen 2 | Allocated |
+|----------------- |---------:|----------:|---------:|------:|------:|------:|----------:|
+|         WithList | 63.86 ms |  6.458 ms | 1.677 ms |     - |     - |     - |     784 B |
+| WithCircularList | 37.20 ms | 15.901 ms | 4.129 ms |     - |     - |     - |     784 B |
 
 ## Todo
 Support `TrimExcess`
